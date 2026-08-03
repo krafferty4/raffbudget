@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Ledger</title>
@@ -38,20 +39,13 @@
 
   /* Hero */
   .hero {
-    padding: 28px 4px 22px;
+    padding: 10px 4px 22px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 22px;
   }
-  .hero-label {
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin: 0 0 8px;
-  }
   .hero-num {
     font-family: var(--mono);
-    font-size: 42px;
+    font-size: 50px;
     font-weight: 500;
     letter-spacing: -0.01em;
     margin: 0;
@@ -63,12 +57,9 @@
     font-family: var(--mono);
     font-size: 12.5px;
     color: var(--text-dim);
-    margin: 10px 0 0;
-    white-space: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
+    margin: 12px 0 0;
+    line-height: 1.5;
   }
-  .hero-sub::-webkit-scrollbar { display: none; }
   .hero-sub .amt { color: var(--text); }
   .hero-rule {
     height: 1px;
@@ -289,55 +280,14 @@
     background: rgba(216, 168, 87, 0.14);
   }
 
-  /* Footer / actions */
-  .actions {
-    margin-top: 26px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 2px;
-  }
-  .btn {
-    font-family: var(--sans);
-    font-size: 14.5px;
-    font-weight: 500;
-    padding: 13px 16px;
-    border-radius: 9px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    text-align: center;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #1A140A;
-    border-color: var(--accent);
-  }
-  .btn-primary:active { opacity: 0.85; }
-  .save-note {
-    font-size: 12px;
-    color: var(--text-faint);
-    text-align: center;
-    margin-top: 2px;
-    line-height: 1.5;
-  }
-  .status {
-    font-size: 12px;
-    text-align: center;
-    color: var(--positive);
-    height: 16px;
-    margin-top: -2px;
-  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="hero">
-    <p class="hero-label">Current remaining balance</p>
-    <p class="hero-num pos" id="heroNum">$840</p>
-    <div class="hero-sub" id="heroFormula">Position ($940) + Ledger (-$1,675) + Advance ($1,575)</div>
+    <p class="hero-num" id="heroNum">$0</p>
+    <div class="hero-sub" id="heroFormula">Position ($0) + Ledger ($0) + Advance ($0)</div>
     <div class="hero-rule"></div>
   </div>
 
@@ -362,9 +312,9 @@
   <div class="section">
     <div class="section-head">
       <p class="section-title">Ledger</p>
-      <span class="section-total" id="ledgerEndOut">-$1,675</span>
+      <span class="section-total" id="ledgerEndOut">$0</span>
     </div>
-    <div class="card" id="ledgerCard"><div class="row locked"><span class="row-sign pos">+</span><div class="row-label-wrap"><span class="row-label static">Pay I</span><span class="row-tag">auto</span></div><span class="row-amt static">$2,630</span><span class="row-bal">$2,630</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row locked"><span class="row-sign neg">−</span><div class="row-label-wrap"><span class="row-label static">F&amp;G</span><span class="row-tag">auto</span></div><span class="row-amt static">$225</span><span class="row-bal">$2,405</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row locked"><span class="row-sign pos">+</span><div class="row-label-wrap"><span class="row-label static">Pay II</span><span class="row-tag">auto</span></div><span class="row-amt static">$2,630</span><span class="row-bal">$5,035</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row locked"><span class="row-sign neg">−</span><div class="row-label-wrap"><span class="row-label static">F&amp;G</span><span class="row-tag">auto</span></div><span class="row-amt static">$225</span><span class="row-bal">$4,810</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$2,385</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,995</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,930</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,875</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,760</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,630</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,600</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,575</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal neg">-$1,675</span><button class="row-recur" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><button class="add-row">+ Add line</button></div>
+    <div class="card" id="ledgerCard"></div>
     <div class="legend"><span><span class="dot"></span> tap the ring on a line to mark it monthly / recurring, which repeats it into next cycle's advance</span></div>
   </div>
 
@@ -386,125 +336,29 @@
     </div>
   </div>
 
-  <div class="actions">
-    <button class="btn btn-primary" id="saveBtn">Save to file</button>
-    <div class="status" id="statusMsg"></div>
-    <p class="save-note">Saving downloads this file with your data built in. In the share sheet, choose Save to Files and replace the original in iCloud Drive to sync across devices.</p>
-  </div>
-
 </div>
 
-<script id="app-data" type="application/json">{
-  "position": {
-    "bank": 1300,
-    "cc": -360,
-    "fg": 450,
-    "hoa": 0,
-    "paycheck": 2630
-  },
+<script id="app-data" type="application/json">
+{
+  "position": { "bank": 1500, "cc": -360, "paycheck": 2630, "fg": 450 },
   "ledger": [
-    {
-      "label": "Mortgage",
-      "amount": -2425,
-      "recurring": true
-    },
-    {
-      "label": "HOA",
-      "amount": -390,
-      "recurring": true
-    },
-    {
-      "label": "Water",
-      "amount": -65,
-      "recurring": true
-    },
-    {
-      "label": "Internet",
-      "amount": -55,
-      "recurring": true
-    },
-    {
-      "label": "Electric",
-      "amount": -115,
-      "recurring": true
-    },
-    {
-      "label": "Auto Ins.",
-      "amount": -130,
-      "recurring": true
-    },
-    {
-      "label": "Gym",
-      "amount": -30,
-      "recurring": true
-    },
-    {
-      "label": "Services",
-      "amount": -25,
-      "recurring": true
-    },
-    {
-      "label": "Roof",
-      "amount": -3250,
-      "recurring": false
-    }
-  ],
-  "advance": [
-    {
-      "label": "Pay I",
-      "amount": 2630
-    },
-    {
-      "label": "F&G",
-      "amount": -225
-    },
-    {
-      "label": "Pay II",
-      "amount": 2630
-    },
-    {
-      "label": "F&G",
-      "amount": -225
-    },
-    {
-      "label": "Mortgage",
-      "amount": -2425
-    },
-    {
-      "label": "HOA",
-      "amount": -390
-    },
-    {
-      "label": "Water",
-      "amount": -65
-    },
-    {
-      "label": "Internet",
-      "amount": -55
-    },
-    {
-      "label": "Electric",
-      "amount": -90
-    },
-    {
-      "label": "Auto Ins.",
-      "amount": -130
-    },
-    {
-      "label": "Gym",
-      "amount": -30
-    },
-    {
-      "label": "Services",
-      "amount": -25
-    }
+    { "label": "Mortgage", "amount": -2425, "recurring": true },
+    { "label": "HOA", "amount": -390, "recurring": true },
+    { "label": "Water", "amount": -65, "recurring": true },
+    { "label": "Internet", "amount": -55, "recurring": true },
+    { "label": "Electric", "amount": -115, "recurring": true },
+    { "label": "Auto Ins.", "amount": -130, "recurring": true },
+    { "label": "Gym", "amount": -30, "recurring": true },
+    { "label": "Services", "amount": -25, "recurring": true }
   ]
-}</script>
+}
+</script>
 
 <script>
 (function () {
   var STORAGE_KEY = 'ledger-app-state';
   var state;
+  var ledgerRowRefs = [];
 
   function loadState() {
     var embedded = JSON.parse(document.getElementById('app-data').textContent);
@@ -586,6 +440,7 @@
     var card = document.getElementById('ledgerCard');
     card.innerHTML = '';
     var running = 0;
+    ledgerRowRefs = [];
 
     genRows().forEach(function (item) {
       running += item.amount;
@@ -621,13 +476,15 @@
       row.appendChild(spacer);
 
       card.appendChild(row);
+      ledgerRowRefs.push({ balEl: bal });
     });
 
     state.ledger.forEach(function (item, idx) {
       running += num(item.amount);
       var row = document.createElement('div');
       row.className = 'row';
-      row.appendChild(signSpan(num(item.amount)));
+      var signEl = signSpan(num(item.amount));
+      row.appendChild(signEl);
 
       var labelWrap = document.createElement('div');
       labelWrap.className = 'row-label-wrap';
@@ -651,7 +508,7 @@
       amt.placeholder = '0';
       amt.addEventListener('input', function () {
         state.ledger[idx].amount = num(amt.value);
-        recalcAndRender();
+        updateLedgerCalcs();
       });
       row.appendChild(amt);
 
@@ -681,6 +538,7 @@
       row.appendChild(del);
 
       card.appendChild(row);
+      ledgerRowRefs.push({ balEl: bal, signEl: signEl, amtEl: amt });
     });
 
     var addBtn = document.createElement('button');
@@ -693,6 +551,40 @@
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
     card.appendChild(addBtn);
+  }
+
+  // Lightweight update for a single amount keystroke: refreshes running
+  // balances, sign badges, and totals in place without rebuilding the
+  // ledger's DOM, so the input being typed into is never destroyed.
+  function updateLedgerCalcs() {
+    var running = 0;
+    var refIdx = 0;
+
+    genRows().forEach(function (item) {
+      running += item.amount;
+      var ref = ledgerRowRefs[refIdx++];
+      if (ref) {
+        ref.balEl.textContent = fmt(running);
+        ref.balEl.className = 'row-bal' + (running < 0 ? ' neg' : '');
+      }
+    });
+
+    state.ledger.forEach(function (item) {
+      var amount = num(item.amount);
+      running += amount;
+      var ref = ledgerRowRefs[refIdx++];
+      if (ref) {
+        ref.balEl.textContent = fmt(running);
+        ref.balEl.className = 'row-bal' + (running < 0 ? ' neg' : '');
+        var neg = amount < 0;
+        ref.signEl.className = 'row-sign ' + (neg ? 'neg' : 'pos');
+        ref.signEl.textContent = neg ? '\u2212' : '+';
+        ref.amtEl.className = 'row-amt ' + (neg ? 'neg' : 'pos');
+      }
+    });
+
+    renderTotals();
+    persist();
   }
 
   function renderTotals() {
@@ -743,34 +635,12 @@
     });
   }
 
-  function saveToFile() {
-    var dataScript = document.getElementById('app-data');
-    dataScript.textContent = JSON.stringify(state, null, 2);
-    var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-    var blob = new Blob([html], { type: 'text/html' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'budget.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-
-    var status = document.getElementById('statusMsg');
-    status.textContent = 'Saved. Replace the file in iCloud Drive to sync.';
-    setTimeout(function () { status.textContent = ''; }, 5000);
-  }
-
   state = loadState();
   renderPosition();
   bindPosition();
   recalcAndRender();
-
-  document.getElementById('saveBtn').addEventListener('click', saveToFile);
 })();
 </script>
 
-
-
-</body></html>
+</body>
+</html>
