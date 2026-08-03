@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ledger</title>
+<style>
+  :root {
+    --bg: #0A0D12;
+    --surface: #12161D;
+    --surface-2: #191F29;
+    --border: #232B37;
+    --text: #E7EAEE;
+    --text-dim: #7C8798;
+    --text-faint: #4B5563;
+    --accent: #D8A857;
+    --accent-dim: #8A6F3F;
+    --positive: #5CB98C;
+    --positive-dim: #3A6E56;
+    --negative: #D9776B;
+    --negative-dim: #7A4038;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px) 0;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .wrap { padding: 20px 18px 0; }
+
+  /* Hero */
+  .hero {
+    padding: 28px 4px 22px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
+  }
+  .hero-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 8px;
+  }
+  .hero-num {
+    font-family: var(--mono);
+    font-size: 42px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+    line-height: 1;
+  }
+  .hero-num.neg { color: var(--negative); }
+  .hero-num.pos { color: var(--text); }
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin: 10px 0 0;
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .hero-sub::-webkit-scrollbar { display: none; }
+  .hero-sub .amt { color: var(--text); }
+  .hero-rule {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-dim), transparent);
+    margin-top: 18px;
+  }
+
+  /* Section cards */
+  .section { margin-bottom: 20px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+  .section-title {
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0;
+  }
+  .section-total {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* Input grid for Position section */
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .input-cell {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .input-cell:nth-child(2n) { border-right: none; }
+  .input-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .input-cell label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .input-cell input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 17px;
+    padding: 0;
+    outline: none;
+  }
+  .input-cell input::placeholder { color: var(--text-faint); }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .input-cell input.cc-field { color: var(--negative); }
+
+  /* Ledger rows */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .row:last-child { border-bottom: none; }
+  .row.locked { background: var(--surface-2); }
+
+  .row-sign {
+    width: 14px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .row-sign.pos { color: var(--positive); }
+  .row-sign.neg { color: var(--negative); }
+
+  .row-label-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .row-label {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 14.5px;
+    padding: 4px 0;
+    outline: none;
+    text-overflow: ellipsis;
+  }
+  .row-label::placeholder { color: var(--text-faint); }
+  .row-label.static { color: var(--text-dim); }
+  .row-tag {
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+  }
+
+  .row-amt {
+    width: 80px;
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 14.5px;
+    text-align: right;
+    padding: 4px 0;
+    outline: none;
+  }
+  .row-amt::placeholder { color: var(--text-faint); }
+  .row-amt.pos { color: var(--positive); }
+  .row-amt.neg { color: var(--negative); }
+  .row-amt.static { color: var(--text-dim); }
+
+  .row-bal {
+    width: 78px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .row-bal.neg { color: var(--negative); }
+
+  .row-recur {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  .row-recur.on {
+    background: rgba(216, 168, 87, 0.14);
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .row-del {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  .row-del:active { color: var(--negative); }
+
+  .add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    color: var(--accent-dim);
+    font-size: 13.5px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+  .add-row:active { color: var(--accent); }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    padding: 8px 2px 0;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend .dot {
+    width: 8px; height: 8px; border-radius: 2px;
+    display: inline-block;
+    border: 1px solid var(--accent-dim);
+    background: rgba(216, 168, 87, 0.14);
+  }
+
+  /* Footer / actions */
+  .actions {
+    margin-top: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 2px;
+  }
+  .btn {
+    font-family: var(--sans);
+    font-size: 14.5px;
+    font-weight: 500;
+    padding: 13px 16px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    text-align: center;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #1A140A;
+    border-color: var(--accent);
+  }
+  .btn-primary:active { opacity: 0.85; }
+  .save-note {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+  .status {
+    font-size: 12px;
+    text-align: center;
+    color: var(--positive);
+    height: 16px;
+    margin-top: -2px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <p class="hero-label">Current remaining balance</p>
+    <p class="hero-num pos" id="heroNum">$840</p>
+    <div class="hero-sub" id="heroFormula">Position ($940) + Ledger (-$1,675) + Advance ($1,575)</div>
+    <div class="hero-rule"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <p class="section-title">Position</p>
+    </div>
+    <div class="card">
+      <div class="input-grid">
+        <div class="input-cell">
+          <label>Bank balance</label>
+          <input type="number" inputmode="decimal" id="inBank" placeholder="0" step="0.01">
+        </div>
+        <div class="input-cell">
+          <label>CC balance</label>
+          <input type="number" inputmode="decimal" id="inCC" placeholder="0" step="0.01" class="cc-field">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <p class="section-title">Ledger</p>
+      <span class="section-total" id="ledgerEndOut">-$1,675</span>
+    </div>
+    <div class="card" id="ledgerCard"><div class="row locked"><span class="row-sign pos">+</span><div class="row-label-wrap"><span class="row-label static">Pay I</span><span class="row-tag">auto</span></div><span class="row-amt static">$2,630</span><span class="row-bal">$2,630</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row locked"><span class="row-sign neg">−</span><div class="row-label-wrap"><span class="row-label static">F&amp;G</span><span class="row-tag">auto</span></div><span class="row-amt static">$225</span><span class="row-bal">$2,405</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row locked"><span class="row-sign pos">+</span><div class="row-label-wrap"><span class="row-label static">Pay II</span><span class="row-tag">auto</span></div><span class="row-amt static">$2,630</span><span class="row-bal">$5,035</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row locked"><span class="row-sign neg">−</span><div class="row-label-wrap"><span class="row-label static">F&amp;G</span><span class="row-tag">auto</span></div><span class="row-amt static">$225</span><span class="row-bal">$4,810</span><span style="width: 20px; flex-shrink: 0;"></span></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$2,385</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,995</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,930</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,875</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,760</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,630</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,600</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal">$1,575</span><button class="row-recur on" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><div class="row"><span class="row-sign neg">−</span><div class="row-label-wrap"><input class="row-label" placeholder="Label"></div><input class="row-amt neg" type="number" inputmode="decimal" step="0.01" placeholder="0"><span class="row-bal neg">-$1,675</span><button class="row-recur" aria-label="Toggle monthly recurring">↻</button><button class="row-del" aria-label="Remove line">✕</button></div><button class="add-row">+ Add line</button></div>
+    <div class="legend"><span><span class="dot"></span> tap the ring on a line to mark it monthly / recurring, which repeats it into next cycle's advance</span></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <p class="section-title">Settings</p>
+    </div>
+    <div class="card">
+      <div class="input-grid">
+        <div class="input-cell">
+          <label>Paycheck</label>
+          <input type="number" inputmode="decimal" id="inPaycheck" placeholder="0" step="0.01">
+        </div>
+        <div class="input-cell">
+          <label>Monthly F&amp;G est.</label>
+          <input type="number" inputmode="decimal" id="inFG" placeholder="0" step="0.01">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="saveBtn">Save to file</button>
+    <div class="status" id="statusMsg"></div>
+    <p class="save-note">Saving downloads this file with your data built in. In the share sheet, choose Save to Files and replace the original in iCloud Drive to sync across devices.</p>
+  </div>
+
+</div>
+
+<script id="app-data" type="application/json">{
+  "position": {
+    "bank": 1300,
+    "cc": -360,
+    "fg": 450,
+    "hoa": 0,
+    "paycheck": 2630
+  },
+  "ledger": [
+    {
+      "label": "Mortgage",
+      "amount": -2425,
+      "recurring": true
+    },
+    {
+      "label": "HOA",
+      "amount": -390,
+      "recurring": true
+    },
+    {
+      "label": "Water",
+      "amount": -65,
+      "recurring": true
+    },
+    {
+      "label": "Internet",
+      "amount": -55,
+      "recurring": true
+    },
+    {
+      "label": "Electric",
+      "amount": -115,
+      "recurring": true
+    },
+    {
+      "label": "Auto Ins.",
+      "amount": -130,
+      "recurring": true
+    },
+    {
+      "label": "Gym",
+      "amount": -30,
+      "recurring": true
+    },
+    {
+      "label": "Services",
+      "amount": -25,
+      "recurring": true
+    },
+    {
+      "label": "Roof",
+      "amount": -3250,
+      "recurring": false
+    }
+  ],
+  "advance": [
+    {
+      "label": "Pay I",
+      "amount": 2630
+    },
+    {
+      "label": "F&G",
+      "amount": -225
+    },
+    {
+      "label": "Pay II",
+      "amount": 2630
+    },
+    {
+      "label": "F&G",
+      "amount": -225
+    },
+    {
+      "label": "Mortgage",
+      "amount": -2425
+    },
+    {
+      "label": "HOA",
+      "amount": -390
+    },
+    {
+      "label": "Water",
+      "amount": -65
+    },
+    {
+      "label": "Internet",
+      "amount": -55
+    },
+    {
+      "label": "Electric",
+      "amount": -90
+    },
+    {
+      "label": "Auto Ins.",
+      "amount": -130
+    },
+    {
+      "label": "Gym",
+      "amount": -30
+    },
+    {
+      "label": "Services",
+      "amount": -25
+    }
+  ]
+}</script>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'ledger-app-state';
+  var state;
+
+  function loadState() {
+    var embedded = JSON.parse(document.getElementById('app-data').textContent);
+    var cached = null;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) cached = JSON.parse(raw);
+    } catch (e) {}
+    return cached || embedded;
+  }
+
+  function fmt(n) {
+    n = Math.round(n + Number.EPSILON);
+    var neg = n < 0;
+    var abs = Math.abs(n);
+    var out = '$' + abs.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    return neg ? '-' + out : out;
+  }
+
+  function num(v) {
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // Bank/CC take raw typed text so a leading + or - can override the implied sign.
+  // defaultNegative=true means a plain number (no sign typed) counts as negative.
+  function bankValue() { return num(state.position.bank); }
+  function ccValue() { return num(state.position.cc); }
+  function positionTotal() { return bankValue() + ccValue(); }
+
+  function genRows() {
+    var p = state.position;
+    var pay = num(p.paycheck);
+    var fgHalf = num(p.fg) / 2;
+    return [
+      { label: 'Pay I', amount: pay, locked: true },
+      { label: 'F&G', amount: -fgHalf, locked: true },
+      { label: 'Pay II', amount: pay, locked: true },
+      { label: 'F&G', amount: -fgHalf, locked: true }
+    ];
+  }
+
+  function ledgerEnd() {
+    var bal = 0;
+    genRows().forEach(function (row) { bal += row.amount; });
+    state.ledger.forEach(function (row) { bal += num(row.amount); });
+    return bal;
+  }
+
+  function advanceTotal() {
+    var p = state.position;
+    var t = num(p.paycheck) * 2 - num(p.fg);
+    state.ledger.forEach(function (row) {
+      if (row.recurring) t += num(row.amount);
+    });
+    return t;
+  }
+
+  function renderPosition() {
+    var bankIn = document.getElementById('inBank');
+    var ccIn = document.getElementById('inCC');
+    var payIn = document.getElementById('inPaycheck');
+    var fgIn = document.getElementById('inFG');
+
+    if (document.activeElement !== bankIn) bankIn.value = state.position.bank;
+    if (document.activeElement !== ccIn) ccIn.value = state.position.cc;
+    if (document.activeElement !== payIn) payIn.value = state.position.paycheck;
+    if (document.activeElement !== fgIn) fgIn.value = state.position.fg;
+  }
+
+  function signSpan(amount) {
+    var s = document.createElement('span');
+    s.className = 'row-sign ' + (amount < 0 ? 'neg' : 'pos');
+    s.textContent = amount < 0 ? '\u2212' : '+';
+    return s;
+  }
+
+  function renderLedger() {
+    var card = document.getElementById('ledgerCard');
+    card.innerHTML = '';
+    var running = 0;
+
+    genRows().forEach(function (item) {
+      running += item.amount;
+      var row = document.createElement('div');
+      row.className = 'row locked';
+      row.appendChild(signSpan(item.amount));
+
+      var labelWrap = document.createElement('div');
+      labelWrap.className = 'row-label-wrap';
+      var label = document.createElement('span');
+      label.className = 'row-label static';
+      label.textContent = item.label;
+      var tag = document.createElement('span');
+      tag.className = 'row-tag';
+      tag.textContent = 'auto';
+      labelWrap.appendChild(label);
+      labelWrap.appendChild(tag);
+      row.appendChild(labelWrap);
+
+      var amt = document.createElement('span');
+      amt.className = 'row-amt static';
+      amt.textContent = fmt(Math.abs(item.amount));
+      row.appendChild(amt);
+
+      var bal = document.createElement('span');
+      bal.className = 'row-bal' + (running < 0 ? ' neg' : '');
+      bal.textContent = fmt(running);
+      row.appendChild(bal);
+
+      var spacer = document.createElement('span');
+      spacer.style.width = '20px';
+      spacer.style.flexShrink = '0';
+      row.appendChild(spacer);
+
+      card.appendChild(row);
+    });
+
+    state.ledger.forEach(function (item, idx) {
+      running += num(item.amount);
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.appendChild(signSpan(num(item.amount)));
+
+      var labelWrap = document.createElement('div');
+      labelWrap.className = 'row-label-wrap';
+      var label = document.createElement('input');
+      label.className = 'row-label';
+      label.value = item.label;
+      label.placeholder = 'Label';
+      label.addEventListener('input', function () {
+        state.ledger[idx].label = label.value;
+        persist();
+      });
+      labelWrap.appendChild(label);
+      row.appendChild(labelWrap);
+
+      var amt = document.createElement('input');
+      amt.className = 'row-amt ' + (num(item.amount) < 0 ? 'neg' : 'pos');
+      amt.type = 'number';
+      amt.inputMode = 'decimal';
+      amt.step = '0.01';
+      amt.value = item.amount;
+      amt.placeholder = '0';
+      amt.addEventListener('input', function () {
+        state.ledger[idx].amount = num(amt.value);
+        recalcAndRender();
+      });
+      row.appendChild(amt);
+
+      var bal = document.createElement('span');
+      bal.className = 'row-bal' + (running < 0 ? ' neg' : '');
+      bal.textContent = fmt(running);
+      row.appendChild(bal);
+
+      var recur = document.createElement('button');
+      recur.className = 'row-recur' + (item.recurring ? ' on' : '');
+      recur.textContent = '\u21bb';
+      recur.setAttribute('aria-label', 'Toggle monthly recurring');
+      recur.addEventListener('click', function () {
+        state.ledger[idx].recurring = !state.ledger[idx].recurring;
+        recalcAndRender();
+      });
+      row.appendChild(recur);
+
+      var del = document.createElement('button');
+      del.className = 'row-del';
+      del.textContent = '\u2715';
+      del.setAttribute('aria-label', 'Remove line');
+      del.addEventListener('click', function () {
+        state.ledger.splice(idx, 1);
+        recalcAndRender();
+      });
+      row.appendChild(del);
+
+      card.appendChild(row);
+    });
+
+    var addBtn = document.createElement('button');
+    addBtn.className = 'add-row';
+    addBtn.textContent = '+ Add line';
+    addBtn.addEventListener('click', function () {
+      state.ledger.push({ label: '', amount: 0, recurring: false });
+      recalcAndRender();
+      var inputs = card.querySelectorAll('.row-label');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+    card.appendChild(addBtn);
+  }
+
+  function renderTotals() {
+    var pos = positionTotal();
+    var le = ledgerEnd();
+    var at = advanceTotal();
+    var total = pos + le + at;
+
+    document.getElementById('ledgerEndOut').textContent = fmt(le);
+
+    var heroEl = document.getElementById('heroNum');
+    heroEl.textContent = fmt(total);
+    heroEl.className = 'hero-num' + (total < 0 ? ' neg' : ' pos');
+
+    document.getElementById('heroFormula').textContent =
+      'Position (' + fmt(pos) + ') + Ledger (' + fmt(le) + ') + Advance (' + fmt(at) + ')';
+  }
+
+  function recalcAndRender() {
+    renderPosition();
+    renderLedger();
+    renderTotals();
+    persist();
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function bindPosition() {
+    document.getElementById('inBank').addEventListener('input', function (e) {
+      state.position.bank = num(e.target.value);
+      recalcAndRender();
+    });
+    document.getElementById('inCC').addEventListener('input', function (e) {
+      state.position.cc = num(e.target.value);
+      recalcAndRender();
+    });
+    document.getElementById('inPaycheck').addEventListener('input', function (e) {
+      state.position.paycheck = num(e.target.value);
+      recalcAndRender();
+    });
+    document.getElementById('inFG').addEventListener('input', function (e) {
+      state.position.fg = num(e.target.value);
+      recalcAndRender();
+    });
+  }
+
+  function saveToFile() {
+    var dataScript = document.getElementById('app-data');
+    dataScript.textContent = JSON.stringify(state, null, 2);
+    var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'budget.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+
+    var status = document.getElementById('statusMsg');
+    status.textContent = 'Saved. Replace the file in iCloud Drive to sync.';
+    setTimeout(function () { status.textContent = ''; }, 5000);
+  }
+
+  state = loadState();
+  renderPosition();
+  bindPosition();
+  recalcAndRender();
+
+  document.getElementById('saveBtn').addEventListener('click', saveToFile);
+})();
+</script>
+
+
+
+</body></html>
