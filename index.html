@@ -503,7 +503,7 @@
       var amt = document.createElement('input');
       amt.className = 'row-amt ' + (num(item.amount) < 0 ? 'neg' : 'pos');
       amt.type = 'number';
-      amt.inputMode = 'decimal';
+      amt.inputMode = 'text';
       amt.step = '0.01';
       amt.value = item.amount;
       amt.placeholder = '0';
