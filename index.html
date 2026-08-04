@@ -48,7 +48,7 @@
   }
   .hero-num {
     font-family: var(--mono);
-    font-size: 50px;
+    font-size: 56px;
     font-weight: 500;
     letter-spacing: -0.01em;
     margin: 0;
@@ -188,7 +188,7 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
-  .input-cell input.cc-field { color: var(--negative); }
+  .input-cell input.debt-field { color: var(--negative); }
 
   /* Ledger rows */
   .row {
@@ -200,17 +200,30 @@
   }
   .row:last-child { border-bottom: none; }
   .row.locked { background: var(--surface-2); }
+  .row.applied { opacity: 0.5; }
 
-  .row-sign {
-    width: 14px;
+  .applied-card { margin-top: 10px; }
+  .applied-card:empty { display: none; }
+
+  .row-check {
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
-    font-family: var(--mono);
-    font-size: 15px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--accent);
+    font-size: 12px;
     font-weight: 700;
+    line-height: 18px;
     text-align: center;
+    cursor: pointer;
+    padding: 0;
   }
-  .row-sign.pos { color: var(--positive); }
-  .row-sign.neg { color: var(--negative); }
+  .row-check.checked {
+    background: rgba(216, 168, 87, 0.18);
+    border-color: var(--accent-dim);
+  }
 
   .row-label-wrap {
     flex: 1;
@@ -324,8 +337,8 @@
 
   <div class="hero">
     <p class="hero-num" id="heroNum">$0</p>
-    <div class="hero-sub" id="heroFormula"><span class="fpart">Position ($0)</span> <span class="fpart">+ Ledger ($0)</span> <span class="fpart">+ Advance ($0)</span></div>
     <div class="hero-rule"></div>
+    <div class="hero-sub" id="heroFormula"><span class="fpart">Position ($0)</span> <span class="fpart">+ Ledger ($0)</span> <span class="fpart">+ Advance ($0)</span></div>
   </div>
 
   <div class="section">
@@ -340,7 +353,7 @@
         </div>
         <div class="input-cell">
           <label>CC balance</label>
-          <input type="number" inputmode="decimal" id="inCC" placeholder="0" step="0.01" class="cc-field">
+          <input type="number" inputmode="decimal" id="inCC" placeholder="0" step="0.01" class="debt-field">
         </div>
       </div>
     </div>
@@ -352,6 +365,7 @@
       <span class="section-total" id="ledgerEndOut">$0</span>
     </div>
     <div class="card" id="ledgerCard"></div>
+    <div class="card applied-card" id="appliedCard"></div>
   </div>
 
   <div class="section">
@@ -366,7 +380,7 @@
         </div>
         <div class="input-cell">
           <label>Monthly F&amp;G est.</label>
-          <input type="number" inputmode="decimal" id="inFG" placeholder="0" step="0.01">
+          <input type="number" inputmode="text" id="inFG" placeholder="0" step="0.01" class="debt-field">
         </div>
       </div>
       <label class="check-row" for="inPayIII">
@@ -381,7 +395,7 @@
 
 <script id="app-data" type="application/json">
 {
-  "position": { "bank": 1500, "cc": -360, "paycheck": 2630, "fg": 450 },
+  "position": { "bank": 1500, "cc": -360, "paycheck": 2630, "fg": -450 },
   "payIII": false,
   "ledger": [
     { "label": "Mortgage", "amount": -2425, "recurring": true },
@@ -420,6 +434,13 @@
     return neg ? '-' + out : out;
   }
 
+  // Auto rows (Pay I/II/III, F&G) display as plain signed numbers, like a
+  // typed ledger entry, no currency symbol or thousands separator.
+  function fmtPlain(n) {
+    n = Math.round(n + Number.EPSILON);
+    return String(n);
+  }
+
   function num(v) {
     var n = parseFloat(v);
     return isNaN(n) ? 0 : n;
@@ -435,29 +456,30 @@
     var p = state.position;
     var pay = num(p.paycheck);
     var fgHalf = num(p.fg) / 2;
+    var applied = state.autoApplied || {};
     var rows = [
-      { label: 'Pay I', amount: pay, locked: true },
-      { label: 'F&G', amount: -fgHalf, locked: true },
-      { label: 'Pay II', amount: pay, locked: true },
-      { label: 'F&G', amount: -fgHalf, locked: true }
+      { id: 'payI', label: 'Pay I', amount: pay, locked: true, applied: !!applied.payI },
+      { id: 'fg1', label: 'F&G', amount: fgHalf, locked: true, applied: !!applied.fg1 },
+      { id: 'payII', label: 'Pay II', amount: pay, locked: true, applied: !!applied.payII },
+      { id: 'fg2', label: 'F&G', amount: fgHalf, locked: true, applied: !!applied.fg2 }
     ];
     if (state.payIII) {
-      rows.push({ label: 'Pay III', amount: pay, locked: true });
-      rows.push({ label: 'F&G', amount: -fgHalf, locked: true });
+      rows.push({ id: 'payIII', label: 'Pay III', amount: pay, locked: true, applied: !!applied.payIII });
+      rows.push({ id: 'fg3', label: 'F&G', amount: fgHalf, locked: true, applied: !!applied.fg3 });
     }
     return rows;
   }
 
   function ledgerEnd() {
     var bal = 0;
-    genRows().forEach(function (row) { bal += row.amount; });
-    state.ledger.forEach(function (row) { bal += num(row.amount); });
+    genRows().forEach(function (row) { if (!row.applied) bal += row.amount; });
+    state.ledger.forEach(function (row) { if (!row.applied) bal += num(row.amount); });
     return bal;
   }
 
   function advanceTotal() {
     var p = state.position;
-    var t = num(p.paycheck) * 2 - num(p.fg);
+    var t = num(p.paycheck) * 2 + num(p.fg);
     state.ledger.forEach(function (row) {
       if (row.recurring) t += num(row.amount);
     });
@@ -490,128 +512,175 @@
     payIIIIn.checked = !!state.payIII;
   }
 
-  function signSpan(amount) {
-    var s = document.createElement('span');
-    s.className = 'row-sign ' + (amount < 0 ? 'neg' : 'pos');
-    s.textContent = amount < 0 ? '\u2212' : '+';
-    return s;
+  function makeCheckBtn(checked, onToggle) {
+    var btn = document.createElement('button');
+    btn.className = 'row-check' + (checked ? ' checked' : '');
+    btn.textContent = checked ? '\u2713' : '';
+    btn.setAttribute('aria-label', 'Already applied to bank balance');
+    btn.addEventListener('click', onToggle);
+    return btn;
+  }
+
+  function buildAutoRow(item, running, showBalance) {
+    var row = document.createElement('div');
+    row.className = 'row locked' + (item.applied ? ' applied' : '');
+    row.appendChild(makeCheckBtn(item.applied, function () {
+      var applied = state.autoApplied || (state.autoApplied = {});
+      applied[item.id] = !applied[item.id];
+      recalcAndRender();
+    }));
+
+    var labelWrap = document.createElement('div');
+    labelWrap.className = 'row-label-wrap';
+    var label = document.createElement('span');
+    label.className = 'row-label static';
+    label.textContent = item.label;
+    var tag = document.createElement('span');
+    tag.className = 'row-tag';
+    tag.textContent = 'auto';
+    labelWrap.appendChild(label);
+    labelWrap.appendChild(tag);
+    row.appendChild(labelWrap);
+
+    var amt = document.createElement('span');
+    amt.className = 'row-amt static';
+    amt.textContent = fmtPlain(item.amount);
+    row.appendChild(amt);
+
+    if (showBalance) {
+      var bal = document.createElement('span');
+      bal.className = 'row-bal' + (running < 0 ? ' neg' : '');
+      bal.textContent = fmt(running);
+      row.appendChild(bal);
+    } else {
+      var balSpacer = document.createElement('span');
+      balSpacer.style.width = '78px';
+      balSpacer.style.flexShrink = '0';
+      row.appendChild(balSpacer);
+    }
+
+    var spacer = document.createElement('span');
+    spacer.style.width = '20px';
+    spacer.style.flexShrink = '0';
+    row.appendChild(spacer);
+
+    return { row: row, balEl: showBalance ? row.querySelector('.row-bal') : null };
+  }
+
+  function buildManualRow(item, idx, running, showBalance) {
+    var row = document.createElement('div');
+    row.className = 'row' + (item.applied ? ' applied' : '');
+    row.appendChild(makeCheckBtn(item.applied, function () {
+      state.ledger[idx].applied = !state.ledger[idx].applied;
+      recalcAndRender();
+    }));
+
+    var labelWrap = document.createElement('div');
+    labelWrap.className = 'row-label-wrap';
+    var label = document.createElement('input');
+    label.className = 'row-label';
+    label.value = item.label;
+    label.placeholder = 'Label';
+    label.addEventListener('input', function () {
+      state.ledger[idx].label = label.value;
+      persist();
+    });
+    labelWrap.appendChild(label);
+    row.appendChild(labelWrap);
+
+    var amt = document.createElement('input');
+    amt.className = 'row-amt ' + (num(item.amount) < 0 ? 'neg' : 'pos');
+    amt.type = 'number';
+    amt.inputMode = 'text';
+    amt.step = '0.01';
+    amt.value = item.amount;
+    amt.placeholder = '0';
+    amt.addEventListener('input', function () {
+      state.ledger[idx].amount = num(amt.value);
+      updateLedgerCalcs();
+    });
+    row.appendChild(amt);
+
+    var bal = null;
+    if (showBalance) {
+      bal = document.createElement('span');
+      bal.className = 'row-bal' + (running < 0 ? ' neg' : '');
+      bal.textContent = fmt(running);
+      row.appendChild(bal);
+    } else {
+      var balSpacer = document.createElement('span');
+      balSpacer.style.width = '78px';
+      balSpacer.style.flexShrink = '0';
+      row.appendChild(balSpacer);
+    }
+
+    var recur = document.createElement('button');
+    recur.className = 'row-recur' + (item.recurring ? ' on' : '');
+    recur.textContent = '\u21bb';
+    recur.setAttribute('aria-label', 'Toggle monthly recurring');
+    recur.addEventListener('click', function () {
+      state.ledger[idx].recurring = !state.ledger[idx].recurring;
+      recalcAndRender();
+    });
+    row.appendChild(recur);
+
+    var del = document.createElement('button');
+    del.className = 'row-del';
+    del.textContent = '\u2715';
+    del.setAttribute('aria-label', 'Remove line');
+    del.addEventListener('click', function () {
+      state.ledger.splice(idx, 1);
+      recalcAndRender();
+    });
+    row.appendChild(del);
+
+    return { row: row, balEl: bal, amtEl: amt };
   }
 
   function renderLedger() {
-    var card = document.getElementById('ledgerCard');
-    card.innerHTML = '';
+    var ledgerCard = document.getElementById('ledgerCard');
+    var appliedCard = document.getElementById('appliedCard');
+    ledgerCard.innerHTML = '';
+    appliedCard.innerHTML = '';
     var running = 0;
     ledgerRowRefs = [];
 
     genRows().forEach(function (item) {
-      running += item.amount;
-      var row = document.createElement('div');
-      row.className = 'row locked';
-      row.appendChild(signSpan(item.amount));
-
-      var labelWrap = document.createElement('div');
-      labelWrap.className = 'row-label-wrap';
-      var label = document.createElement('span');
-      label.className = 'row-label static';
-      label.textContent = item.label;
-      var tag = document.createElement('span');
-      tag.className = 'row-tag';
-      tag.textContent = 'auto';
-      labelWrap.appendChild(label);
-      labelWrap.appendChild(tag);
-      row.appendChild(labelWrap);
-
-      var amt = document.createElement('span');
-      amt.className = 'row-amt static';
-      amt.textContent = fmt(Math.abs(item.amount));
-      row.appendChild(amt);
-
-      var bal = document.createElement('span');
-      bal.className = 'row-bal' + (running < 0 ? ' neg' : '');
-      bal.textContent = fmt(running);
-      row.appendChild(bal);
-
-      var spacer = document.createElement('span');
-      spacer.style.width = '20px';
-      spacer.style.flexShrink = '0';
-      row.appendChild(spacer);
-
-      card.appendChild(row);
-      ledgerRowRefs.push({ balEl: bal });
+      if (item.applied) {
+        var built = buildAutoRow(item, 0, false);
+        appliedCard.appendChild(built.row);
+      } else {
+        running += item.amount;
+        var built2 = buildAutoRow(item, running, true);
+        ledgerCard.appendChild(built2.row);
+        ledgerRowRefs.push({ balEl: built2.balEl });
+      }
     });
 
     state.ledger.forEach(function (item, idx) {
-      running += num(item.amount);
-      var row = document.createElement('div');
-      row.className = 'row';
-      var signEl = signSpan(num(item.amount));
-      row.appendChild(signEl);
-
-      var labelWrap = document.createElement('div');
-      labelWrap.className = 'row-label-wrap';
-      var label = document.createElement('input');
-      label.className = 'row-label';
-      label.value = item.label;
-      label.placeholder = 'Label';
-      label.addEventListener('input', function () {
-        state.ledger[idx].label = label.value;
-        persist();
-      });
-      labelWrap.appendChild(label);
-      row.appendChild(labelWrap);
-
-      var amt = document.createElement('input');
-      amt.className = 'row-amt ' + (num(item.amount) < 0 ? 'neg' : 'pos');
-      amt.type = 'number';
-      amt.inputMode = 'text';
-      amt.step = '0.01';
-      amt.value = item.amount;
-      amt.placeholder = '0';
-      amt.addEventListener('input', function () {
-        state.ledger[idx].amount = num(amt.value);
-        updateLedgerCalcs();
-      });
-      row.appendChild(amt);
-
-      var bal = document.createElement('span');
-      bal.className = 'row-bal' + (running < 0 ? ' neg' : '');
-      bal.textContent = fmt(running);
-      row.appendChild(bal);
-
-      var recur = document.createElement('button');
-      recur.className = 'row-recur' + (item.recurring ? ' on' : '');
-      recur.textContent = '\u21bb';
-      recur.setAttribute('aria-label', 'Toggle monthly recurring');
-      recur.addEventListener('click', function () {
-        state.ledger[idx].recurring = !state.ledger[idx].recurring;
-        recalcAndRender();
-      });
-      row.appendChild(recur);
-
-      var del = document.createElement('button');
-      del.className = 'row-del';
-      del.textContent = '\u2715';
-      del.setAttribute('aria-label', 'Remove line');
-      del.addEventListener('click', function () {
-        state.ledger.splice(idx, 1);
-        recalcAndRender();
-      });
-      row.appendChild(del);
-
-      card.appendChild(row);
-      ledgerRowRefs.push({ balEl: bal, signEl: signEl, amtEl: amt });
+      if (item.applied) {
+        var built = buildManualRow(item, idx, 0, false);
+        appliedCard.appendChild(built.row);
+      } else {
+        running += num(item.amount);
+        var built2 = buildManualRow(item, idx, running, true);
+        ledgerCard.appendChild(built2.row);
+        ledgerRowRefs.push({ balEl: built2.balEl, amtEl: built2.amtEl });
+      }
     });
 
     var addBtn = document.createElement('button');
     addBtn.className = 'add-row';
     addBtn.textContent = '+ Add line';
     addBtn.addEventListener('click', function () {
-      state.ledger.push({ label: '', amount: 0, recurring: false });
+      state.ledger.push({ label: '', amount: 0, recurring: false, applied: false });
       recalcAndRender();
-      var inputs = card.querySelectorAll('.row-label');
+      var inputs = ledgerCard.querySelectorAll('.row-label');
       if (inputs.length) inputs[inputs.length - 1].focus();
     });
-    card.appendChild(addBtn);
+    ledgerCard.appendChild(addBtn);
+
+    appliedCard.style.display = appliedCard.children.length ? '' : 'none';
   }
 
   // Lightweight update for a single amount keystroke: refreshes running
@@ -622,6 +691,7 @@
     var refIdx = 0;
 
     genRows().forEach(function (item) {
+      if (item.applied) return;
       running += item.amount;
       var ref = ledgerRowRefs[refIdx++];
       if (ref) {
@@ -631,6 +701,7 @@
     });
 
     state.ledger.forEach(function (item) {
+      if (item.applied) return;
       var amount = num(item.amount);
       running += amount;
       var ref = ledgerRowRefs[refIdx++];
@@ -638,8 +709,6 @@
         ref.balEl.textContent = fmt(running);
         ref.balEl.className = 'row-bal' + (running < 0 ? ' neg' : '');
         var neg = amount < 0;
-        ref.signEl.className = 'row-sign ' + (neg ? 'neg' : 'pos');
-        ref.signEl.textContent = neg ? '\u2212' : '+';
         ref.amtEl.className = 'row-amt ' + (neg ? 'neg' : 'pos');
       }
     });
