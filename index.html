@@ -492,13 +492,13 @@
     return t;
   }
 
-  // A 2nd advance only requires actual money in hand right now (Position).
-  // Ledger is this month's projection, not cash you already have, so it
-  // doesn't count toward funding the month after next.
-  function advanceCount() {
-    var single = advanceTotal();
-    return (positionTotal() > single) ? 2 : 1;
-  }
+  // A 2nd advance only requires actual savings in hand right now, not the
+  // full Position (Bank + CC too) — Savings alone is what's truly liquid
+  // and set aside, not money already earmarked for this month's Ledger.
+function advanceCount() {
+  var single = advanceTotal();
+  return (savingsValue() > single) ? 2 : 1;
+}
 
   function roundStep(n, step) {
     return Math.round(n / step) * step;
