@@ -11,7 +11,7 @@
 <style>
   :root {
     --bg: #000000;
-    --surface: #12161D;
+    --surface: #191F29;
     --surface-2: #191F29;
     --border: #232B37;
     --text: #E7EAEE;
@@ -112,6 +112,8 @@
   }
   .input-cell:nth-child(2n) { border-right: none; }
   .input-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .input-grid.has-three .input-cell:nth-child(2) { border-bottom: 1px solid var(--border); }
+  .input-grid.has-three .input-cell:nth-child(3) { border-right: none; }
   .input-cell label {
     display: block;
     font-size: 11px;
@@ -199,7 +201,7 @@
     border-bottom: 1px solid var(--border);
   }
   .row:last-child { border-bottom: none; }
-  .row.locked { background: var(--surface-2); }
+  .row.locked { background: #0E1115; }
   .row.applied { opacity: 0.5; }
 
   .applied-card { margin-top: 10px; }
@@ -346,14 +348,18 @@
       <p class="section-title">Position</p>
     </div>
     <div class="card">
-      <div class="input-grid">
+      <div class="input-grid has-three">
         <div class="input-cell">
           <label>Bank balance</label>
-          <input type="number" inputmode="text" id="inBank" placeholder="0" step="0.01">
+          <input type="number" inputmode="decimal" id="inBank" placeholder="0" step="0.01">
         </div>
         <div class="input-cell">
           <label>CC balance</label>
-          <input type="number" inputmode="text" id="inCC" placeholder="0" step="0.01" class="debt-field">
+          <input type="number" inputmode="decimal" id="inCC" placeholder="0" step="0.01" class="debt-field">
+        </div>
+        <div class="input-cell">
+          <label>Savings</label>
+          <input type="number" inputmode="decimal" id="inSavings" placeholder="0" step="0.01">
         </div>
       </div>
     </div>
@@ -380,7 +386,7 @@
         </div>
         <div class="input-cell">
           <label>Monthly F&amp;G est.</label>
-          <input type="number" inputmode="text" id="inFG" placeholder="0" step="0.01" class="debt-field">
+          <input type="number" inputmode="decimal" id="inFG" placeholder="0" step="0.01" class="debt-field">
         </div>
       </div>
       <label class="check-row" for="inPayIII">
@@ -395,7 +401,7 @@
 
 <script id="app-data" type="application/json">
 {
-  "position": { "bank": 1500, "cc": -360, "paycheck": 2630, "fg": -450 },
+  "position": { "bank": 1500, "cc": -360, "savings": 0, "paycheck": 2630, "fg": -450 },
   "payIII": false,
   "ledger": [
     { "label": "Mortgage", "amount": -2425, "recurring": true },
@@ -450,7 +456,8 @@
   // defaultNegative=true means a plain number (no sign typed) counts as negative.
   function bankValue() { return num(state.position.bank); }
   function ccValue() { return num(state.position.cc); }
-  function positionTotal() { return bankValue() + ccValue(); }
+  function savingsValue() { return num(state.position.savings); }
+  function positionTotal() { return bankValue() + ccValue() + savingsValue(); }
 
   function genRows() {
     var p = state.position;
@@ -501,12 +508,14 @@
   function renderPosition() {
     var bankIn = document.getElementById('inBank');
     var ccIn = document.getElementById('inCC');
+    var savingsIn = document.getElementById('inSavings');
     var payIn = document.getElementById('inPaycheck');
     var fgIn = document.getElementById('inFG');
     var payIIIIn = document.getElementById('inPayIII');
 
     if (document.activeElement !== bankIn) bankIn.value = state.position.bank;
     if (document.activeElement !== ccIn) ccIn.value = state.position.cc;
+    if (document.activeElement !== savingsIn) savingsIn.value = state.position.savings;
     if (document.activeElement !== payIn) payIn.value = state.position.paycheck;
     if (document.activeElement !== fgIn) fgIn.value = state.position.fg;
     payIIIIn.checked = !!state.payIII;
@@ -673,7 +682,7 @@
     addBtn.className = 'add-row';
     addBtn.textContent = '+ Add line';
     addBtn.addEventListener('click', function () {
-      state.ledger.push({ label: '', amount: 0, recurring: false, applied: false });
+      state.ledger.push({ label: '', amount: '', recurring: false, applied: false });
       recalcAndRender();
       var inputs = ledgerCard.querySelectorAll('.row-label');
       if (inputs.length) inputs[inputs.length - 1].focus();
@@ -759,6 +768,10 @@
     });
     document.getElementById('inCC').addEventListener('input', function (e) {
       state.position.cc = num(e.target.value);
+      recalcAndRender();
+    });
+    document.getElementById('inSavings').addEventListener('input', function (e) {
+      state.position.savings = num(e.target.value);
       recalcAndRender();
     });
     document.getElementById('inPaycheck').addEventListener('input', function (e) {
