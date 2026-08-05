@@ -604,7 +604,7 @@
     amt.value = item.amount;
     amt.placeholder = '0';
     amt.addEventListener('input', function () {
-      state.ledger[idx].amount = num(amt.value);
+      state.ledger[idx].amount = amt.value;
       updateLedgerCalcs();
     });
     row.appendChild(amt);
@@ -760,27 +760,27 @@
 
   function bindPosition() {
     document.getElementById('inBank').addEventListener('input', function (e) {
-      state.position.bank = num(e.target.value);
+      state.position.bank = e.target.value;
       recalcAndRender();
     });
     document.getElementById('inCC').addEventListener('input', function (e) {
-      state.position.cc = num(e.target.value);
+      state.position.cc = e.target.value;
       recalcAndRender();
     });
     document.getElementById('inSavings').addEventListener('input', function (e) {
-      state.position.savings = num(e.target.value);
+      state.position.savings = e.target.value;
       recalcAndRender();
     });
     document.getElementById('inOther').addEventListener('input', function (e) {
-      state.position.other = num(e.target.value);
+      state.position.other = e.target.value;
       recalcAndRender();
     });
     document.getElementById('inPaycheck').addEventListener('input', function (e) {
-      state.position.paycheck = num(e.target.value);
+      state.position.paycheck = e.target.value;
       recalcAndRender();
     });
     document.getElementById('inFG').addEventListener('input', function (e) {
-      state.position.fg = num(e.target.value);
+      state.position.fg = e.target.value;
       recalcAndRender();
     });
     document.getElementById('inPayIII').addEventListener('change', function (e) {
