@@ -48,7 +48,7 @@
   }
   .hero-num {
     font-family: var(--mono);
-    font-size: 75px;
+    font-size: 56px;
     font-weight: 500;
     letter-spacing: -0.01em;
     margin: 0;
@@ -88,11 +88,6 @@
     font-weight: 600;
     margin: 0;
   }
-  .section-total {
-    font-family: var(--mono);
-    font-size: 14px;
-    color: var(--text-dim);
-  }
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -112,7 +107,6 @@
   }
   .input-cell:nth-child(2n) { border-right: none; }
   .input-cell:nth-last-child(-n+2) { border-bottom: none; }
-  .input-grid.has-three .input-cell:nth-child(2) { border-bottom: 1px solid var(--border); }
   .input-cell label {
     display: block;
     font-size: 11px;
@@ -347,7 +341,7 @@
       <p class="section-title">Position</p>
     </div>
     <div class="card">
-      <div class="input-grid has-three">
+      <div class="input-grid">
         <div class="input-cell">
           <label>Bank balance</label>
           <input type="number" inputmode="decimal" id="inBank" placeholder="0" step="0.01">
@@ -360,6 +354,10 @@
           <label>Savings</label>
           <input type="number" inputmode="decimal" id="inSavings" placeholder="0" step="0.01">
         </div>
+        <div class="input-cell">
+          <label>Other</label>
+          <input type="number" inputmode="decimal" id="inOther" placeholder="0" step="0.01" class="debt-field">
+        </div>
       </div>
     </div>
   </div>
@@ -367,7 +365,6 @@
   <div class="section">
     <div class="section-head">
       <p class="section-title">Ledger</p>
-      <span class="section-total" id="ledgerEndOut">$0</span>
     </div>
     <div class="card" id="ledgerCard"></div>
     <div class="card applied-card" id="appliedCard"></div>
@@ -400,7 +397,7 @@
 
 <script id="app-data" type="application/json">
 {
-  "position": { "bank": 1500, "cc": -360, "savings": "", "paycheck": 2630, "fg": -450 },
+  "position": { "bank": 1500, "cc": -360, "savings": "", "other": "", "paycheck": 2630, "fg": -450 },
   "payIII": false,
   "ledger": [
     { "label": "Mortgage", "amount": -2425, "recurring": true },
@@ -456,7 +453,8 @@
   function bankValue() { return num(state.position.bank); }
   function ccValue() { return num(state.position.cc); }
   function savingsValue() { return num(state.position.savings); }
-  function positionTotal() { return bankValue() + ccValue() + savingsValue(); }
+  function otherValue() { return num(state.position.other); }
+  function positionTotal() { return bankValue() + ccValue() + savingsValue() + otherValue(); }
 
   function genRows() {
     var p = state.position;
@@ -495,10 +493,10 @@
   // A 2nd advance only requires actual savings in hand right now, not the
   // full Position (Bank + CC too) — Savings alone is what's truly liquid
   // and set aside, not money already earmarked for this month's Ledger.
-function advanceCount() {
-  var single = advanceTotal();
-  return (savingsValue() > single) ? 2 : 1;
-}
+  function advanceCount() {
+    var single = advanceTotal();
+    return (savingsValue() > single) ? 2 : 1;
+  }
 
   function roundStep(n, step) {
     return Math.round(n / step) * step;
@@ -508,6 +506,7 @@ function advanceCount() {
     var bankIn = document.getElementById('inBank');
     var ccIn = document.getElementById('inCC');
     var savingsIn = document.getElementById('inSavings');
+    var otherIn = document.getElementById('inOther');
     var payIn = document.getElementById('inPaycheck');
     var fgIn = document.getElementById('inFG');
     var payIIIIn = document.getElementById('inPayIII');
@@ -515,6 +514,7 @@ function advanceCount() {
     if (document.activeElement !== bankIn) bankIn.value = state.position.bank;
     if (document.activeElement !== ccIn) ccIn.value = state.position.cc;
     if (document.activeElement !== savingsIn) savingsIn.value = state.position.savings;
+    if (document.activeElement !== otherIn) otherIn.value = state.position.other;
     if (document.activeElement !== payIn) payIn.value = state.position.paycheck;
     if (document.activeElement !== fgIn) fgIn.value = state.position.fg;
     payIIIIn.checked = !!state.payIII;
@@ -734,8 +734,6 @@ function advanceCount() {
     var total = pos + le + at;
     var roundedTotal = roundStep(total, 50);
 
-    document.getElementById('ledgerEndOut').textContent = fmt(le);
-
     var heroEl = document.getElementById('heroNum');
     heroEl.textContent = fmt(roundedTotal);
     heroEl.className = 'hero-num' + (roundedTotal < 0 ? ' neg' : ' pos');
@@ -771,6 +769,10 @@ function advanceCount() {
     });
     document.getElementById('inSavings').addEventListener('input', function (e) {
       state.position.savings = num(e.target.value);
+      recalcAndRender();
+    });
+    document.getElementById('inOther').addEventListener('input', function (e) {
+      state.position.other = num(e.target.value);
       recalcAndRender();
     });
     document.getElementById('inPaycheck').addEventListener('input', function (e) {
