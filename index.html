@@ -583,12 +583,16 @@
   // instead of the real one. Used by the Salary table to project what the
   // Ledger would look like at a different salary, holding F&G, bills, and
   // the Pay III setting fixed at their current live values.
-  function ledgerEndForPaycheck(paycheck) {
-    var fgHalf = num(state.position.fg) / 2;
-    var bal = paycheck + fgHalf + paycheck + fgHalf;
-    if (state.payIII) bal += paycheck + fgHalf;
-    state.ledger.forEach(function (row) { if (!row.applied) bal += num(row.amount); });
-    return bal;
+  // Same shape as advanceTotal(), but substitutes a hypothetical paycheck.
+  // Used by the Salary table so "Remaining" reflects a typical steady-state
+  // month (recurring bills only) rather than this specific cycle's Ledger,
+  // which can include one-off additions or items already marked applied.
+  function advanceTotalForPaycheck(paycheck) {
+    var t = paycheck * 2 + num(state.position.fg);
+    state.ledger.forEach(function (row) {
+      if (row.recurring) t += num(row.amount);
+    });
+    return t;
   }
 
   function advanceTotal() {
@@ -934,7 +938,7 @@
 
     rows.forEach(function (salary) {
       var paycheck = FORMULA_PAYCHECK_BASE * (salary / FORMULA_SALARY_BASE);
-      var remaining = ledgerEndForPaycheck(paycheck);
+      var remaining = advanceTotalForPaycheck(paycheck);
       var pctChange = (salary - anchor) / anchor;
       var isAnchor = salary === anchor;
 
