@@ -325,6 +325,80 @@
   }
   .add-row:active { color: var(--accent); }
 
+  .actions {
+    margin-top: 26px;
+    padding: 0 2px;
+  }
+  .btn {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 14.5px;
+    font-weight: 500;
+    padding: 13px 16px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    text-align: center;
+  }
+  .btn:active { opacity: 0.8; }
+
+  .salary-head {
+    padding: 20px 4px 6px;
+  }
+  .salary-head .btn {
+    width: auto;
+    padding: 10px 16px;
+    color: var(--accent);
+  }
+
+  .salary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .salary-row:last-child { border-bottom: none; }
+  .salary-row span:nth-child(2) { text-align: center; }
+  .salary-row span:nth-child(3) { text-align: right; }
+  .salary-header {
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--surface-2);
+  }
+  .salary-row.anchor { background: rgba(216, 168, 87, 0.1); }
+  .salary-row .pct-pos { color: var(--positive); }
+  .salary-row .pct-neg { color: var(--negative); }
+  .salary-row.anchor span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .anchor-btn {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    border: 1px solid var(--accent-dim);
+    background: rgba(216, 168, 87, 0.14);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .anchor-btn:active { opacity: 0.7; }
+
 </style>
 </head>
 <body>
@@ -348,7 +422,7 @@
         </div>
         <div class="input-cell">
           <label>CC balance</label>
-          <input type="number" inputmode="text" id="inCC" placeholder="0" step="0.01" class="debt-field">
+          <input type="number" inputmode="decimal" id="inCC" placeholder="0" step="0.01" class="debt-field">
         </div>
         <div class="input-cell">
           <label>Savings</label>
@@ -356,7 +430,7 @@
         </div>
         <div class="input-cell">
           <label>Other</label>
-          <input type="number" inputmode="text" id="inOther" placeholder="0" step="0.01" class="debt-field">
+          <input type="number" inputmode="decimal" id="inOther" placeholder="0" step="0.01" class="debt-field">
         </div>
       </div>
     </div>
@@ -372,7 +446,7 @@
 
   <div class="section">
     <div class="section-head">
-      <p class="section-title">Input</p>
+      <p class="section-title">Settings</p>
     </div>
     <div class="card">
       <div class="input-grid">
@@ -382,7 +456,7 @@
         </div>
         <div class="input-cell">
           <label>Monthly F&amp;G est.</label>
-          <input type="number" inputmode="text" id="inFG" placeholder="0" step="0.01" class="debt-field">
+          <input type="number" inputmode="decimal" id="inFG" placeholder="0" step="0.01" class="debt-field">
         </div>
       </div>
       <label class="check-row" for="inPayIII">
@@ -393,12 +467,36 @@
     </div>
   </div>
 
+  <div class="actions">
+    <button class="btn" id="salaryBtn">Salary</button>
+  </div>
+
+</div>
+
+<div class="wrap" id="salaryView" style="display:none;">
+  <div class="salary-head">
+    <button class="btn" id="backBtn">&larr; Ledger</button>
+  </div>
+  <div class="section">
+    <div class="section-head">
+      <p class="section-title">Salary</p>
+    </div>
+    <div class="card">
+      <div class="salary-row salary-header">
+        <span>Salary</span>
+        <span>Remaining</span>
+        <span>% Change</span>
+      </div>
+      <div id="salaryRows"></div>
+    </div>
+  </div>
 </div>
 
 <script id="app-data" type="application/json">
 {
   "position": { "bank": 1500, "cc": -360, "savings": "", "other": "", "paycheck": 2630, "fg": -450 },
   "payIII": false,
+  "salaryAnchor": 88000,
   "ledger": [
     { "label": "Mortgage", "amount": -2425, "recurring": true },
     { "label": "HOA", "amount": -390, "recurring": true },
@@ -477,6 +575,18 @@
   function ledgerEnd() {
     var bal = 0;
     genRows().forEach(function (row) { if (!row.applied) bal += row.amount; });
+    state.ledger.forEach(function (row) { if (!row.applied) bal += num(row.amount); });
+    return bal;
+  }
+
+  // Same shape as ledgerEnd(), but substitutes a hypothetical paycheck
+  // instead of the real one. Used by the Salary table to project what the
+  // Ledger would look like at a different salary, holding F&G, bills, and
+  // the Pay III setting fixed at their current live values.
+  function ledgerEndForPaycheck(paycheck) {
+    var fgHalf = num(state.position.fg) / 2;
+    var bal = paycheck + fgHalf + paycheck + fgHalf;
+    if (state.payIII) bal += paycheck + fgHalf;
     state.ledger.forEach(function (row) { if (!row.applied) bal += num(row.amount); });
     return bal;
   }
@@ -788,6 +898,112 @@
       recalcAndRender();
     });
   }
+
+  // Fixed real data point: $2,630/paycheck at an $88,000 salary. This
+  // defines the paycheck-scaling formula and never changes. The
+  // adjustable, persisted state.salaryAnchor is a separate concept: it's
+  // just which row is highlighted as the reference point (defaults to
+  // the same $88,000, but can be nudged independently via the +/- buttons
+  // without altering the underlying salary->paycheck math).
+  var FORMULA_SALARY_BASE = 88000;
+  var FORMULA_PAYCHECK_BASE = 2630;
+
+  // Below the anchor: $5,000 steps down to a $60,000 floor, fixed on a
+  // clean $5k grid so they don't shift when the anchor is nudged by
+  // $1,000. From the anchor upward: $1,000 steps to $110,000, then
+  // $2,000 to $150,000, then $50,000 to $200,000.
+  function buildSalaryRows(anchor) {
+    var rows = [];
+    var s = 60000;
+    while (s < anchor) { rows.push(s); s += 5000; }
+
+    s = anchor;
+    while (s <= 110000) { rows.push(s); s += 1000; }
+    s = rows[rows.length - 1] + 2000;
+    while (s <= 150000) { rows.push(s); s += 2000; }
+    s = rows[rows.length - 1] + 50000;
+    while (s <= 200000) { rows.push(s); s += 50000; }
+    return rows;
+  }
+
+  function renderSalaryTable() {
+    var anchor = num(state.salaryAnchor) || FORMULA_SALARY_BASE;
+    var rows = buildSalaryRows(anchor);
+    var container = document.getElementById('salaryRows');
+    container.innerHTML = '';
+
+    rows.forEach(function (salary) {
+      var paycheck = FORMULA_PAYCHECK_BASE * (salary / FORMULA_SALARY_BASE);
+      var remaining = ledgerEndForPaycheck(paycheck);
+      var pctChange = (salary - anchor) / anchor;
+      var isAnchor = salary === anchor;
+
+      var row = document.createElement('div');
+      row.className = 'salary-row' + (isAnchor ? ' anchor' : '');
+
+      var salCell = document.createElement('span');
+      if (isAnchor) {
+        var minusBtn = document.createElement('button');
+        minusBtn.className = 'anchor-btn';
+        minusBtn.textContent = '\u2212';
+        minusBtn.setAttribute('aria-label', 'Lower anchor by $1,000');
+        minusBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          adjustSalaryAnchor(-1000);
+        });
+
+        var plusBtn = document.createElement('button');
+        plusBtn.className = 'anchor-btn';
+        plusBtn.textContent = '+';
+        plusBtn.setAttribute('aria-label', 'Raise anchor by $1,000');
+        plusBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          adjustSalaryAnchor(1000);
+        });
+
+        var salText = document.createElement('span');
+        salText.textContent = fmt(salary);
+
+        salCell.appendChild(minusBtn);
+        salCell.appendChild(salText);
+        salCell.appendChild(plusBtn);
+      } else {
+        salCell.textContent = fmt(salary);
+      }
+      row.appendChild(salCell);
+
+      var remCell = document.createElement('span');
+      remCell.textContent = fmt(roundStep(remaining, 50));
+      row.appendChild(remCell);
+
+      var pctCell = document.createElement('span');
+      var pctText = (pctChange >= 0 ? '+' : '') + (pctChange * 100).toFixed(1) + '%';
+      pctCell.textContent = pctText;
+      pctCell.className = pctChange > 0 ? 'pct-pos' : (pctChange < 0 ? 'pct-neg' : '');
+      row.appendChild(pctCell);
+
+      container.appendChild(row);
+    });
+  }
+
+  function adjustSalaryAnchor(delta) {
+    var current = num(state.salaryAnchor) || FORMULA_SALARY_BASE;
+    var next = current + delta;
+    if (next < 60000 || next > 200000) return;
+    state.salaryAnchor = next;
+    persist();
+    renderSalaryTable();
+  }
+
+  document.getElementById('salaryBtn').addEventListener('click', function () {
+    renderSalaryTable();
+    document.getElementById('salaryView').style.display = '';
+    document.querySelector('.wrap:not(#salaryView)').style.display = 'none';
+  });
+  document.getElementById('backBtn').addEventListener('click', function () {
+    document.getElementById('salaryView').style.display = 'none';
+    document.querySelector('.wrap:not(#salaryView)').style.display = '';
+  });
 
   state = loadState();
   renderPosition();
