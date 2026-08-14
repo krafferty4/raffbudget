@@ -764,7 +764,9 @@
     var appliedCard = document.getElementById('appliedCard');
     ledgerCard.innerHTML = '';
     appliedCard.innerHTML = '';
-    var running = 0;
+    
+    // CHANGED: Starting the running total with the overall Position Total instead of 0
+    var running = positionTotal(); 
     ledgerRowRefs = [];
 
     genRows().forEach(function (item) {
@@ -805,11 +807,9 @@
     appliedCard.style.display = appliedCard.children.length ? '' : 'none';
   }
 
-  // Lightweight update for a single amount keystroke: refreshes running
-  // balances, sign badges, and totals in place without rebuilding the
-  // ledger's DOM, so the input being typed into is never destroyed.
   function updateLedgerCalcs() {
-    var running = 0;
+    // CHANGED: Reflects the Position Total start here as well
+    var running = positionTotal(); 
     var refIdx = 0;
 
     genRows().forEach(function (item) {
@@ -903,19 +903,9 @@
     });
   }
 
-  // Fixed real data point: $2,630/paycheck at an $88,000 salary. This
-  // defines the paycheck-scaling formula and never changes. The
-  // adjustable, persisted state.salaryAnchor is a separate concept: it's
-  // just which row is highlighted as the reference point (defaults to
-  // the same $88,000, but can be nudged independently via the +/- buttons
-  // without altering the underlying salary->paycheck math).
   var FORMULA_SALARY_BASE = 88000;
   var FORMULA_PAYCHECK_BASE = 2630;
 
-  // Below the anchor: $5,000 steps down to a $60,000 floor, fixed on a
-  // clean $5k grid so they don't shift when the anchor is nudged by
-  // $1,000. From the anchor upward: $1,000 steps to $110,000, then
-  // $2,000 to $150,000, then $50,000 to $200,000.
   function buildSalaryRows(anchor) {
     var rows = [];
     var s = 60000;
